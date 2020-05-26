@@ -51,12 +51,19 @@
  
             ) );
 
-            register_rest_route( 'mynamespace/v1', 'categorys',array(
- 
-                'methods'  => 'GET',
-                'callback' => array($this, 'get_categorys'),
- 
-            ) );
+              register_rest_route( 'mynamespace/v1', 'categorys',array(
+   
+                  'methods'  => 'GET',
+                  'callback' => array($this, 'get_categorys'),
+   
+              ) );
+
+               register_rest_route( 'mynamespace/v1', 'status',array(
+   
+                  'methods'  => 'GET',
+                  'callback' => array($this, 'get_status'),
+   
+              ) );
 
               register_rest_route( 'mynamespace/v1', 'property_by_category/(?P<id>\d+)',array(
  
@@ -73,26 +80,26 @@
               ) );
 
 
-              register_rest_route( 'mynamespace/v1', 'categorys_by_property/(?P<id>\d+)',array(
+              register_rest_route( 'mynamespace/v1', 'categorys_with_property',array(
  
                 'methods'  => 'GET',
-                'callback' => array($this, 'get_categorys_by_property'),
+                'callback' => array($this, 'get_categorys_with_property'),
  
             ) );
 
-              register_rest_route( 'mynamespace/v1', 'status_by_property/(?P<id>\d+)',array(
+              register_rest_route( 'mynamespace/v1', 'status_with_property',array(
  
                 'methods'  => 'GET',
-                'callback' => array($this, 'get_status_by_property'),
+                'callback' => array($this, 'get_status_with_property'),
  
             ) );
 
-               register_rest_route( 'mynamespace/v1', 'status',array(
-   
-                  'methods'  => 'GET',
-                  'callback' => array($this, 'get_status'),
-   
-              ) );
+            register_rest_route( 'mynamespace/v1', 'options_mortgage',array(
+ 
+                'methods'  => 'GET',
+                'callback' => array($this, 'get_options_mortgage'),
+ 
+            ) );
 
             
  
@@ -115,6 +122,11 @@
  
 
      public function get_property(){
+      header("Access-Control-Allow-Origin: *");
+      header("Content-Type: application/json; charset=UTF-8");
+      header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+      header("Access-Control-Max-Age: 3600");
+      header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
         global $wpdb;
 
        $query = "SELECT SQL_CALC_FOUND_ROWS  posts.ID as id,posts.post_author as id_user,posts.post_title as title_property,posts.post_content as contenu_property,A.meta_value as prix,B.meta_value as adresse,C.meta_value as price_short,F.meta_value as ID_image,E.guid as url_image,G.meta_value as ID_agent  FROM wp_posts as posts  INNER JOIN wp_postmeta as A ON ( posts.ID = A.post_id ) INNER JOIN wp_postmeta as B ON ( posts.ID = B.post_id ) INNER JOIN wp_postmeta as C ON ( posts.ID = C.post_id ) INNER JOIN wp_postmeta as D ON ( posts.ID = D.post_id ) INNER JOIN wp_postmeta as F ON ( posts.ID = F.post_id ) INNER JOIN wp_postmeta as G ON ( posts.ID = G.post_id ) INNER JOIN wp_posts as E ON ( F.meta_value = E.ID ) WHERE ( \n  A.meta_key = 'real_estate_property_price'\n) AND ( \n  B.meta_key = 'real_estate_property_address'\n) AND ( \n  C.meta_key = 'real_estate_property_price_short'\n) AND ( \n  D.meta_key = 'real_estate_property_price_unit'\n) AND ( \n  G.meta_key = 'real_estate_property_agent'\n) AND ( \n  F.meta_key = '_thumbnail_id'\n) AND posts.post_type = 'property' AND (posts.post_status = 'publish' OR posts.post_status = 'expired' OR posts.post_status = 'hidden') GROUP BY posts.ID ORDER BY posts.post_date DESC LIMIT 0, 10";
@@ -122,7 +134,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_property', 'empty_property', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -139,7 +151,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_property', 'empty_property', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -156,7 +168,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_agents', 'empty_agents', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -168,12 +180,12 @@
      public function get_one_agent($id_agent){
         global $wpdb;
 
-       $query = "SELECT SQL_CALC_FOUND_ROWS agents.ID,agents.post_title as nom_agent, H.meta_value as name_company,J.meta_value as email_agent, K.meta_value as call_mobile ,L.meta_value as call_office FROM wp_posts as agents INNER JOIN wp_postmeta as H ON ( agents.ID = H.post_id ) INNER JOIN wp_postmeta as J ON ( agents.ID = J.post_id ) INNER JOIN wp_postmeta as K ON ( agents.ID = K.post_id ) INNER JOIN wp_postmeta as L ON ( agents.ID = L.post_id ) WHERE agents.post_type = 'agent' AND ( \n  H.meta_key = 'real_estate_agent_company'\n) AND ( \n  J.meta_key = 'real_estate_agent_email'\n) AND ( \n  K.meta_key = 'real_estate_agent_mobile_number'\n) AND ( \n  L.meta_key = 'real_estate_agent_office_number'\n) AND agents.ID=".$id_agent['id']." GROUP BY agents.ID ";
+       $query = "SELECT SQL_CALC_FOUND_ROWS agents.ID,agents.post_title as nom_agent, H.meta_value as name_company,J.meta_value as email_agent, K.meta_value as call_mobile ,L.meta_value as call_office,M.meta_value as skype FROM wp_posts as agents INNER JOIN wp_postmeta as H ON ( agents.ID = H.post_id ) INNER JOIN wp_postmeta as J ON ( agents.ID = J.post_id ) INNER JOIN wp_postmeta as K ON ( agents.ID = K.post_id ) INNER JOIN wp_postmeta as L ON ( agents.ID = L.post_id ) INNER JOIN wp_postmeta as M ON ( agents.ID = M.post_id ) WHERE agents.post_type = 'agent' AND ( \n  H.meta_key = 'real_estate_agent_company'\n) AND ( \n  J.meta_key = 'real_estate_agent_email'\n) AND ( \n  K.meta_key = 'real_estate_agent_mobile_number'\n) AND ( \n  L.meta_key = 'real_estate_agent_office_number'\n) AND ( \n  M.meta_key = 'real_estate_agent_skype'\n) AND agents.ID=".$id_agent['id']." GROUP BY agents.ID ";
 
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_agent', 'empty_agent', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -191,7 +203,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_category', 'empty_category', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -208,7 +220,7 @@
             $posts  = $wpdb->get_results($query);
             
             if (empty($posts)) {
-                return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+                return new WP_Error( 'empty_status', 'empty_status', array('status' => 404) );
             }
 
             $response = new WP_REST_Response($posts);
@@ -227,7 +239,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_property', 'there is no property in this category', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -245,7 +257,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_property', 'empty_property', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -263,7 +275,7 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_category', 'there is no category in this property', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
@@ -281,7 +293,63 @@
           $posts  = $wpdb->get_results($query);
           
           if (empty($posts)) {
-              return new WP_Error( 'empty_category', 'there is no post in this category', array('status' => 404) );
+              return new WP_Error( 'empty_status', 'empty_status', array('status' => 404) );
+          }
+
+          $response = new WP_REST_Response($posts);
+          $response->set_status(200);
+          return $response;
+
+     }
+
+
+     //Utilisé dans onepropety.page.ts
+     //Utilisé dans overview
+      public function get_categorys_with_property(){
+        global $wpdb;
+
+       $query = "SELECT wp_terms.term_id as id,wp_terms.name as name,A.description as description, A.term_taxonomy_id as taxonomy_id,B.object_id as id_property FROM wp_terms INNER JOIN wp_term_taxonomy as A ON ( wp_terms.term_id = A.term_id ) INNER JOIN wp_term_relationships as B ON ( A.term_taxonomy_id = B.term_taxonomy_id ) WHERE A.taxonomy = 'property-type' " ;
+
+          $posts  = $wpdb->get_results($query);
+          
+          if (empty($posts)) {
+              return new WP_Error( 'empty_category', 'empty_category', array('status' => 404) );
+          }
+
+          $response = new WP_REST_Response($posts);
+          $response->set_status(200);
+          return $response;
+
+     }
+
+
+     public function get_status_with_property(){
+        global $wpdb;
+
+       $query = "SELECT wp_terms.term_id as id,wp_terms.name as name,A.description as description, A.term_taxonomy_id as taxonomy_id,B.object_id as id_property FROM wp_terms INNER JOIN wp_term_taxonomy as A ON ( wp_terms.term_id = A.term_id ) INNER JOIN wp_term_relationships as B ON ( A.term_taxonomy_id = B.term_taxonomy_id ) WHERE A.taxonomy = 'property-status' " ;
+
+          $posts  = $wpdb->get_results($query);
+          
+          if (empty($posts)) {
+              return new WP_Error( 'empty_status', 'empty_status', array('status' => 404) );
+          }
+
+          $response = new WP_REST_Response($posts);
+          $response->set_status(200);
+          return $response;
+
+     }
+
+
+     public function get_options_mortgage(){
+        global $wpdb;
+
+       $query = "SELECT * FROM `wp_options` WHERE `option_name`='lidd_mc_options'" ;
+
+          $posts  = $wpdb->get_results($query);
+          
+          if (empty($posts)) {
+              return new WP_Error( 'empty_options', 'empty_options', array('status' => 404) );
           }
 
           $response = new WP_REST_Response($posts);
